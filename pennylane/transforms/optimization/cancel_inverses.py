@@ -17,7 +17,7 @@ from functools import partial
 
 from pennylane.core.operator import Operator
 from pennylane.core.qscript import QuantumScript, QuantumScriptBatch
-from pennylane.math import is_abstract
+from pennylane.math import allequal, is_abstract, shape
 from pennylane.ops.op_math import Adjoint
 from pennylane.ops.qubit.attributes import (
     self_inverses,
@@ -38,7 +38,7 @@ def _check_equality(items1: TensorLike | Wires, items2: TensorLike | Wires) -> b
         if is_abstract(d1) or is_abstract(d2):
             if d1 is not d2:
                 return False
-        elif d1 != d2:
+        elif shape(d1) != shape(d2) or not allequal(d1, d2):
             return False
 
     return True

@@ -70,6 +70,42 @@ class TestCancelInverses:
 
         assert len(new_tape.operations) == 0
 
+    def test_qubit_unitary_followed_by_adjoint_cancels(self):
+        """Test that a QubitUnitary followed by its adjoint cancels."""
+        U = np.array([[0, 1], [1, 0]], dtype=complex)
+
+        def qfunc():
+            qp.QubitUnitary(U, wires=0)
+            qp.adjoint(qp.QubitUnitary(U, wires=0))
+
+        transformed_qfunc = cancel_inverses(qfunc)
+
+        new_tape = qp.tape.make_qscript(transformed_qfunc)()
+
+        assert len(new_tape.operations) == 0
+
+    @pytest.mark.parametrize(
+        "U2, wires2",
+        [
+            (np.eye(2, dtype=complex), [0]),
+            (np.eye(4, dtype=complex), [0, 1]),
+        ],
+    )
+    def test_qubit_unitary_different_matrix_not_cancelled(self, U2, wires2):
+        """Test that a QubitUnitary is not cancelled by the adjoint of a QubitUnitary
+        with a different matrix, including a matrix of a different shape."""
+        U1 = np.array([[0, 1], [1, 0]], dtype=complex)
+
+        def qfunc():
+            qp.QubitUnitary(U1, wires=0)
+            qp.adjoint(qp.QubitUnitary(U2, wires=wires2))
+
+        transformed_qfunc = cancel_inverses(qfunc)
+
+        new_tape = qp.tape.make_qscript(transformed_qfunc)()
+
+        assert len(new_tape.operations) == 2
+
     def test_one_qubit_no_inverse(self):
         """Test that a one-qubit circuit with a gate in the way does not cancel the inverses."""
 
